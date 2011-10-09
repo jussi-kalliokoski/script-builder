@@ -35,7 +35,9 @@ function __class(name, constructor, args){
 }
 
 function Builder(variables){
-	this.variables = variables || {};
+	this.variables		= variables || {};
+	this.postProcessors	= [];
+	this.defines		= {};
 }
 
 Builder.prototype = {
@@ -46,7 +48,7 @@ Builder.prototype = {
 			ctnt, pos;
 		while((pos = str.search(/\/[\/\*]#/)) !== -1){
 			ctnt	= str.substr(0, pos);
-			r	+= ctnt;
+			r	+= this.postProcess(ctnt);
 			str	= str.substr(pos);
 			switch(str[1]){
 			case '*':
@@ -63,11 +65,11 @@ Builder.prototype = {
 			/* TODO: introduce more informative error handling. */
 			r	+= this.instruct(ctnt);
 		};
-		r += str;
+		r += this.postProcess(str);
 		return r;
 	},
 	instruct: function(command, args){
-		var s;
+		var self = this, s;
 		if (arguments.length < 2){
 			s	= /^\s*(\w+)/.exec(command);
 			args	= command.substr(s[0].length).trim();
@@ -76,10 +78,42 @@ Builder.prototype = {
 		command = command.toLowerCase();
 		for (i=0; i<this.instructions.length; i++){
 			if (this.instructions[i].name === command){
-				return this.instructions[i].exec.call(this, args);
+				switch(command){
+				case "else":
+				case "endif":
+					return self.instructions[i].exec.call(self, args);
+					break;
+				default:
+					s = this.postProcess(function(){return self.instructions[i].exec.call(self, args)});
+					return s instanceof Function ? s() : '';
+				}
 			}
 		}
 		throw "Invalid Builder instruction '" + command + "'!";
+	},
+	addPostProcessor: function(callback){
+		this.postProcessors.push(callback);
+	},
+	removePostProcessors: function(qualifier){
+		var	self	= this,
+			l	= this.postProcessors.length;
+		this.postProcessors = this.postProcessors.reverse().filter(function(){
+			return !qualifier.apply(self, arguments);
+		}).reverse();
+		return l - this.postProcessors.length;
+	},
+	removePostProcessor: function(qualifier){
+		var self = this, done;
+		this.postProcessors = this.postProcessors.reverse().filter(function(){
+			return done = done || !qualifier.apply(self, arguments);
+		}).reverse();
+		return !!done;
+	},
+	postProcess: function(str){
+		this.postProcessors.slice().reverse().forEach(function(proc){
+			str = proc.call(this, str);
+		});
+		return str;
 	},
 	instructions: [
 		{
@@ -100,6 +134,136 @@ Builder.prototype = {
 			name: 'echo',
 			exec: function(args){
 				return this.instruct('js', 'return ' + args);
+			}
+		},
+		{
+			name: 'define',
+			exec: function(args){
+				var	parsed	= /^([^\s]+)(\s+(.+))?$/.exec(args);
+				var	self	= this;
+				if (!parsed){
+					throw new TypeError("DEFINE requires at least one argument.");
+				}
+				var	name	= parsed[1].toUpperCase();
+
+				if (typeof this.defines[name] !== 'undefined'){
+					throw new SyntaxError("DEFINE cannot redefine " + name + ".");
+				}
+
+				if (!parsed[3]){
+					this.defines[name] = '';
+				} else {
+					this.defines[name] = parsed[3];
+				}
+
+				function proc(str){
+					if (str instanceof Function){
+						return str;
+					}
+					var res = '', i;
+					while ((i = str.indexOf(name)) !== -1){
+						res += str.substr(0, i) + self.defines[name];
+						str = str.substr(i + name.length);
+					}
+					return res + str;
+				}
+				proc.defs = true;
+
+				this.addPostProcessor(proc);
+				return '';
+			}
+		},
+		{
+			name: 'if',
+			exec: function(args){
+				if (!args){
+					throw new TypeError("IF requires at least one argument.");
+				}
+				var isValid = !!this.instruct('js', 'return ' + args);
+
+				function proc(str){
+					return isValid ^ proc.els ? str : '';
+				}
+				proc.ifs	= true;
+				proc.els	= false;
+
+				this.addPostProcessor(proc);
+				return '';
+			}
+		},
+		{
+			name: 'ifdef',
+			exec: function(name){
+				var	parsed	= /^[^\s]+$/.exec(name);
+				if (!parsed){
+					throw new TypeError("IFDEF takes one argument.");
+				}
+				name = name.toUpperCase();
+				var isValid = typeof this.defines[name] !== 'undefined';
+
+				function proc(str){
+					return isValid ^ proc.els ? str : '';
+				}
+				proc.ifs	= true;
+				proc.els	= false;
+
+				this.addPostProcessor(proc);
+				return '';
+			}
+		},
+		{
+			name: 'ifndef',
+			exec: function(name){
+				var	parsed	= /^[^\s]+$/.exec(name);
+				if (!parsed){
+					throw new TypeError("IFNDEF takes one argument.");
+				}
+				name = name.toUpperCase();
+				var isValid = typeof this.defines[name] === 'undefined';
+
+				function proc(str){
+					return isValid ^ proc.els ? str : '';
+				}
+				proc.ifs	= true;
+				proc.els	= false;
+
+				this.addPostProcessor(proc);
+				return '';
+			}
+		},
+		{
+			name: 'endif',
+			exec: function(args){
+				if (args){
+					throw new TypeError("ENDIF takes no arguments.");
+				}
+				if (!this.removePostProcessor(function(proc){
+					return !!this.ifs;
+				})){
+					
+					throw new SyntaxError("ENDIF with no matching IF.");
+				}
+				return '';
+			}
+		},
+		{
+			name: 'else',
+			exec: function(args){
+				if (args){
+					throw new TypeError("ELSE takes no arguments.");
+				}
+				var i = this.postProcessors.length, found;
+				while(i--){
+					if (this.postProcessors[i].ifs && !this.postProcessors[i].els){
+						this.postProcessors[i].els = true;
+						done = true;
+						break;
+					}
+				}
+				if (!done){
+					throw new SyntaxError("ELSE with no matching IF.");
+				}
+				return '';
 			}
 		}
 	],
