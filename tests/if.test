@@ -1,0 +1,9 @@
+//#js x = "y"
+y
+//#if x
+//#echo x
+y
+//#else
+n
+//#endif
+y
