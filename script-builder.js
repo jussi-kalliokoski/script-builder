@@ -144,7 +144,7 @@ Builder.prototype = {
 				if (!parsed){
 					throw new TypeError("DEFINE requires at least one argument.");
 				}
-				var	name	= parsed[1].toUpperCase();
+				var	name	= parsed[1];
 
 				if (typeof this.defines[name] !== 'undefined'){
 					throw new SyntaxError("DEFINE cannot redefine " + name + ".");
