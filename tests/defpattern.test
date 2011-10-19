@@ -1,9 +1,12 @@
 y
 //#define /foo\((\w)(\w)\w*\)/g y$1$2y
 //#define /bar/ #'y';
+//#define coocar y
+//#define /roo/g #@coocar
 y
 yfoo(yyax)y
 yfoo(ww)y
 y
 bar
 bar
+coocar

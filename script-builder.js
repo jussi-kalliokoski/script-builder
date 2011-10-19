@@ -151,7 +151,7 @@ Builder.prototype = {
 				if (pattern) {
 					var	substitution	= /\s+(.+)$/.exec(args.substr(pattern[0].length));
 					substitution = substitution ? substitution[1] : '';
-					var method = substitution[0] === '#' ? Function('var $=[].slice.call(arguments);return ' + substitution.substr(1)) : function(s){
+					var method = substitution[0] === '#' ? Function('var $=[].slice.call(arguments);return ' + substitution.substr(1).replace(/@/g, 'this.')) : function(s){
 						var x = [].slice.call(arguments);
 						return substitution.replace(/\$([0-9]+)/g, function(a, n) {
 							return x[+n];
