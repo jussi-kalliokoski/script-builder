@@ -141,32 +141,52 @@ Builder.prototype = {
 			exec: function(args){
 				var	parsed	= /^([^\s]+)(\s+(.+))?$/.exec(args);
 				var	self	= this;
+				var	proc;
 				if (!parsed){
 					throw new TypeError("DEFINE requires at least one argument.");
 				}
+				var	pattern	= /^\/(\\[^\x00-\x1f]|\[(\\[^\x00-\x1f]|[^\x00-\x1f\\\/])*\]|[^\x00-\x1f\\\/\[])+\/[gim]*/.exec(args);
 				var	name	= parsed[1];
 
-				if (typeof this.defines[name] !== 'undefined'){
-					throw new SyntaxError("DEFINE cannot redefine " + name + ".");
+				if (pattern) {
+					var	substitution	= /\s+(.+)$/.exec(args.substr(pattern[0].length));
+					substitution = substitution ? substitution[1] : '';
+					var method = substitution[0] === '#' ? Function('var $=[].slice.call(arguments);return ' + substitution.substr(1)) : function(s){
+						var x = [].slice.call(arguments);
+						return substitution.replace(/\$([0-9]+)/g, function(a, n) {
+							return x[+n];
+						});
+					};
+					pattern = Function('return ' + pattern[0])();
+					proc = function(str){
+						return typeof str === 'string' ? str.replace(pattern, function(){
+							return method.apply(self, arguments);
+						}) : str;
+					};
+				} else {	
+					if (typeof this.defines[name] !== 'undefined'){
+						throw new SyntaxError("DEFINE cannot redefine " + name + ".");
+					}
+
+					if (!parsed[3]){
+						this.defines[name] = '';
+					} else {
+						this.defines[name] = parsed[3];
+					}
+
+					proc = function(str){
+						if (str instanceof Function){
+							return str;
+						}
+						var res = '', i;
+						while ((i = str.indexOf(name)) !== -1){
+							res += str.substr(0, i) + self.defines[name];
+							str = str.substr(i + name.length);
+						}
+						return res + str;
+					};
 				}
 
-				if (!parsed[3]){
-					this.defines[name] = '';
-				} else {
-					this.defines[name] = parsed[3];
-				}
-
-				function proc(str){
-					if (str instanceof Function){
-						return str;
-					}
-					var res = '', i;
-					while ((i = str.indexOf(name)) !== -1){
-						res += str.substr(0, i) + self.defines[name];
-						str = str.substr(i + name.length);
-					}
-					return res + str;
-				}
 				proc.defs = true;
 
 				this.addPostProcessor(proc);

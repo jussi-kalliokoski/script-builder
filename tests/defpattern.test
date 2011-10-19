@@ -1,0 +1,9 @@
+y
+//#define /foo\((\w)(\w)\w*\)/g y$1$2y
+//#define /bar/ #'y';
+y
+yfoo(yyax)y
+yfoo(ww)y
+y
+bar
+bar
