@@ -16,5 +16,5 @@
 	"bugs":		{
 		"web":		"http://github.com/jussi-kalliokoski/script-builder/issues"
 	},
-	"main":		"./"
+	"main":		"./script-builder.js"
 }
