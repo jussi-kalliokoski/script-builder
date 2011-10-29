@@ -1,0 +1,36 @@
+[
+	{
+		"unparsed": [
+			[
+				"unknown",
+				null
+			],
+			[
+				"misunderstood",
+				null
+			]
+		],
+		"body": "/**\n * A simple function whose name is determined by it's own name.\n * It also has some unknown commands.\n * @unknown\n * @misunderstood\n*/",
+		"text": "A simple function whose name is determined by it's own name.\nIt also has some unknown commands.",
+		"name": "Testing"
+	},
+	{
+		"unparsed": [],
+		"body": "/**\n * A function whose name is determined by a command, and it's own name should be overridden.\n * @name Guesting\n*/",
+		"text": "A function whose name is determined by a command, and it's own name should be overridden.",
+		"name": "Guesting"
+	},
+	{
+		"unparsed": [],
+		"body": "/**\n * A comment that has no function to bind to, but a name.\n * @name Orphan\n*/",
+		"text": "A comment that has no function to bind to, but a name.",
+		"name": "Orphan"
+	},
+	{
+		"unparsed": [],
+		"body": "/**\n * A function that has the test command used in it.\n * @test testing data.\n*/",
+		"text": "A function that has the test command used in it.",
+		"test": "testing data.",
+		"name": "Funking"
+	}
+]

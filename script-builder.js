@@ -299,3 +299,90 @@ this.context = function(){
 		f.call(g);
 	}
 };
+
+function Comment(){
+	this.unparsed = [];
+}
+
+Comment.prototype = {
+	text: '',
+	name: null,
+	body: null,
+	unparsed: null,
+}
+
+Comment = this.Comment = __class('Comment', Comment);
+
+function CommentParser(commands, postProcessors) {
+	function processor(str) {
+		var i, l, s, c, r;
+		if (typeof str === 'string') {
+			l = str;
+			while ((i = l.search(processor.commentMatch)) !== -1) {
+				c	= new Comment();
+				c.body	= processor.commentMatch.exec(l)[0];
+				l	= l.substr(i + c.body.length);
+				r	= c.body.split(/\r\n?|\n/g).slice(1, -1);
+				r.forEach(function(a){
+					a = a.replace(/^\s*\*+\s/, '');
+					if (a[0] === '@') {
+						a = a.substr(1);
+						if (!a) {
+							c.text += '@\n';
+							return;
+						}
+						var i, s, cmd = /^([^\s]+)?\s*(.+)?$/.exec(a);
+						for (i=0; i<processor.commands.length; i++) {
+							if (processor.commands[i].name === cmd[1]) {
+								processor.commands[i].exec.call(c, cmd[2]);
+								s = true;
+								break;
+							}
+						}
+						if (!s) {
+							c.unparsed.push([cmd[1], cmd[2]]);
+						}
+					} else {
+						c.text += a + '\n';
+					}
+				});
+				processor.postProcessors.forEach(function(p){
+					p.call(c, l);
+				});
+				processor.comments.push(c);
+			}
+		}
+		return str;
+	}
+
+	__extend(processor, CommentParser.prototype);
+	processor.comments = [];
+	processor.commands = commands ? processor.commands.concat(commands) : [].concat(processor.commands);
+	processor.postProcessors = postProcessors ? processor.postProcessors.concat(postProcessors) : [].concat(processor.postProcessors);
+	return processor;
+}
+
+CommentParser.prototype = {
+	commentMatch: /\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//,
+	commands: [
+		{
+			name: 'name',
+			exec: function(args){
+				this.name = args;
+			},
+		}
+	],
+	postProcessors: [
+		function () {
+			this.text = this.text.trim();
+		},
+		function (r) {
+			var f = /^\s*function\s+([a-z_$][a-z_$0-9]*)/i.exec(r);
+			if (f && !this.name) {
+				this.name = f[1];
+			}
+		}
+	],
+};
+
+this.CommentParser = CommentParser;
