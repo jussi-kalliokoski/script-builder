@@ -309,6 +309,11 @@ Comment.prototype = {
 	name: null,
 	body: null,
 	unparsed: null,
+	__onfinish: null,
+	onfinish: function (callback) {
+		this.__onfinish = this.__onfinish || [];
+		this.__onfinish.push(callback);
+	},
 }
 
 Comment = this.Comment = __class('Comment', Comment);
@@ -349,6 +354,11 @@ function CommentParser(commands, postProcessors) {
 				processor.postProcessors.forEach(function(p){
 					p.call(c, l);
 				});
+				while(c.__onfinish) {
+					r = c.__onfinish.shift();
+					if (c.__onfinish.length === 0) delete c.__onfinish;
+					r.call(c, l);
+				}
 				processor.comments.push(c);
 			}
 		}
