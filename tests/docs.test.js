@@ -14,6 +14,9 @@ function Wrestling(){}
 
 /**
  * A comment that has no function to bind to, but a name.
+ *
+ * These empty lines should be rendered as just \n as well.
+ *
  * @name Orphan
 */
 

@@ -22,8 +22,8 @@
 	},
 	{
 		"unparsed": [],
-		"body": "/**\n * A comment that has no function to bind to, but a name.\n * @name Orphan\n*/",
-		"text": "A comment that has no function to bind to, but a name.",
+		"body": "/**\n * A comment that has no function to bind to, but a name.\n *\n * These empty lines should be rendered as just \\n as well.\n *\n * @name Orphan\n*/",
+		"text": "A comment that has no function to bind to, but a name.\n\nThese empty lines should be rendered as just \\n as well.",
 		"name": "Orphan"
 	},
 	{

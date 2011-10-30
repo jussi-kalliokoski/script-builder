@@ -329,7 +329,7 @@ function CommentParser(commands, postProcessors) {
 				l	= l.substr(i + c.body.length);
 				r	= c.body.split(/\r\n?|\n/g).slice(1, -1);
 				r.forEach(function(a){
-					a = a.replace(/^\s*\*+\s/, '');
+					a = a.replace(/^\s*\*+\s?/, '');
 					if (a[0] === '@') {
 						a = a.substr(1);
 						if (!a) {
