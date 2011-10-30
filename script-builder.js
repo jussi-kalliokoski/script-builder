@@ -387,9 +387,12 @@ CommentParser.prototype = {
 			this.text = this.text.trim();
 		},
 		function (r) {
-			var f = /^\s*function\s+([a-z_$][a-z_$0-9]*)/i.exec(r);
-			if (f && !this.name) {
-				this.name = f[1];
+			if (!this.name) {
+				var f = /^\s*function\s+([a-z_$][a-z_$0-9]*)/i.exec(r);
+				if (f) { this.name = f[1]; return; }
+
+				f = /^\s*([a-z_$][a-z_$0-9]*)\s*:\s*function/i.exec(r);
+				if (f) { this.name = f[1]; return; }
 			}
 		}
 	],

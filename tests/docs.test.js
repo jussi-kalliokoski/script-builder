@@ -25,3 +25,10 @@ function Wrestling(){}
  * @test testing data.
 */
 function Funking(){}
+
+Funking.prototype = {
+/**
+ * This function should get its name from the object notation.
+*/
+	resting: function(){}
+};

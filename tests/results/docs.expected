@@ -32,5 +32,11 @@
 		"text": "A function that has the test command used in it.",
 		"test": "testing data.",
 		"name": "Funking"
+	},
+	{
+		"unparsed": [],
+		"body": "/**\n * This function should get its name from the object notation.\n*/",
+		"text": "This function should get its name from the object notation.",
+		"name": "resting"
 	}
 ]
